@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-#+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-#|r|e|d|a|n|d|g|r|e|e|n|.|c|o|.|u|k|
-#+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# https://www.immobilienscout24.de/sitemap.html
+# https://www.immobilienscout24.de/geoautocomplete/v3/locations.json?i=mannheim
 
 import requests
 from pprint import pprint
@@ -25,18 +23,86 @@ params = dict(
 	)
 
 response = requests.get(url, headers=headers)
-# get 20 expose links from page
+print(response.status_code)
+print(response.text)
 soup = BeautifulSoup(response.content, features="lxml")
 
 ls_expose = []
-
 for a in soup.select('a'):
             if 'expose' in a['href']:
-            	ls_expose.append(a['href'])
-             
+            	ls_expose.append(a['href'])            
 ls_expose = (set(ls_expose)) 
 
+# Get link to first details page
 relative_link = list(ls_expose)[0]
-url = urljoin('https://www.immobilienscout24.de/', relative_link)
+url2 = urljoin('https://www.immobilienscout24.de/', relative_link)
 
-print(url)
+# Get first details page
+response = requests.get(url2, headers=headers)
+#print(response.text)
+
+## parse child page ##
+
+soup = BeautifulSoup(response.content, features="lxml")
+
+try:
+	price = soup.find('div', class_ ='is24qa-kaufpreis-main is24-value font-semibold is24-preis-value')
+	
+	print(price)
+	print(price.text)
+except:
+    pass
+
+address = soup.find('div', class_='font-ellipsis').text
+address = address.replace(',', '')
+print(address)
+
+postcode = soup.find('span', class_ = 'zip-region-and-country').text
+print(postcode)
+
+livingspace = soup.find('dd', class_ =  'is24qa-wohnflaeche-ca grid-item three-fifths').text
+livingspace = livingspace.strip()
+print(livingspace)
+
+rooms = soup.find('dd', class_ = 'is24qa-zimmer').text
+rooms = rooms.strip()
+print(rooms)
+
+try:
+	parking = soup.find('dd', class_ = 'is24qa-garage-stellplatz grid-item three-fifths').text
+	parking = parking.strip()
+	print(parking)
+except:
+	pass
+
+try:
+	provision = soup.find('dd', class_ = 'is24qa-provision').text
+	provision = provision.strip()
+	print(f"provision={provision}")
+except:
+	pass
+
+try:
+	provision_note = soup.find('dd', class_ = 'is24qa-provision-note').text
+	provision_note = provision_note.strip()
+	print("provision note")
+	print(provision_note)
+except:
+	pass
+
+try:
+	mieteinnahmen = soup.find('dd', class_ = 'is24qa-mieteinnahmen-pro-monat').text
+	mieteinnahmen= mieteinnahmen.strip()
+	print("mieteinnahmen=")
+	print(mieteinnahmen)
+except:
+	pass
+
+try:
+	hausgeld = soup.find('span', class_ = 'is24qa-hausgeld').text
+	hausgeld = hausgeld.strip()
+	print("hausgeld=")
+	print(hausgeld)
+except:
+	pass
+
