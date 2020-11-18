@@ -40,39 +40,47 @@ def fetch_parent():
 					ls_expose.append(a['href'])            
 	ls_expose = (set(ls_expose)) 
 	# Get link to first details page
-	relative_link = list(ls_expose)[0]
+ 
+
+ 
+	relative_link = list(ls_expose)[4] # increment for each card in listing # 
 	url2 = urljoin('https://www.immobilienscout24.de/', relative_link)
 	# Get each of 20 details pages from list
 	response = requests.get(url2, headers=headers)
 	soup = BeautifulSoup(response.content, features="lxml")
-	return (soup)
+	parse_details(soup)
 
 # parse child page #
 def parse_details(soup):
 
+	# PRICE
 	try:
 		price = soup.find('div', class_ ='is24qa-kaufpreis-main is24-value font-semibold is24-preis-value')
-
-		print(price)
+		#print(price)
 		print(price.text)
 	except:
 	    pass
-
+	
+	# ADDRESS
 	address = soup.find('div', class_='font-ellipsis').text
 	address = address.replace(',', '')
 	print(address)
 
+	# POSTCODE
 	postcode = soup.find('span', class_ = 'zip-region-and-country').text
 	print(postcode)
 
+	# LIVING SPACE
 	livingspace = soup.find('dd', class_ =  'is24qa-wohnflaeche-ca grid-item three-fifths').text
 	livingspace = livingspace.strip()
 	print(livingspace)
 
+	# ROOMS
 	rooms = soup.find('dd', class_ = 'is24qa-zimmer').text
 	rooms = rooms.strip()
 	print(rooms)
 
+	# PARKING
 	try:
 		parking = soup.find('dd', class_ = 'is24qa-garage-stellplatz grid-item three-fifths').text
 		parking = parking.strip()
@@ -80,6 +88,7 @@ def parse_details(soup):
 	except:
 		pass
 
+	# PROVISION
 	try:
 		provision = soup.find('dd', class_ = 'is24qa-provision').text
 		provision = provision.strip()
@@ -87,6 +96,7 @@ def parse_details(soup):
 	except:
 		pass
 
+	# PROVISION_NOTE
 	try:
 		provision_note = soup.find('dd', class_ = 'is24qa-provision-note').text
 		provision_note = provision_note.strip()
@@ -95,6 +105,7 @@ def parse_details(soup):
 	except:
 		pass
 
+	# Mieteinnahmen
 	try:
 		mieteinnahmen = soup.find('dd', class_ = 'is24qa-mieteinnahmen-pro-monat').text
 		mieteinnahmen= mieteinnahmen.strip()
@@ -102,7 +113,8 @@ def parse_details(soup):
 		print(mieteinnahmen)
 	except:
 		pass
-
+	
+	# Hausegeld
 	try:
 		hausgeld = soup.find('span', class_ = 'is24qa-hausgeld').text
 		hausgeld = hausgeld.strip()
@@ -111,4 +123,7 @@ def parse_details(soup):
 	except:
 		pass
 
-parse_details(fetch_parent())
+# Main Driver #
+if __name__ == '__main__':
+    
+	fetch_parent()
