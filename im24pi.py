@@ -6,32 +6,37 @@
 # https://www.immobilienscout24.de/sitemap.html
 # https://www.immobilienscout24.de/geoautocomplete/v3/locations.json?i=mannheim
 
+import os.path
+import random
 import requests
 from pprint import pprint
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-import re
 from random import randint
 from time import sleep
+import csv
 
+
+headers = [
+		# Firefox 77 Mac
+		{
+			"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:77.0) Gecko/20100101 Firefox/77.0",
+			"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+			"Accept-Language": "en-US,en;q=0.5",
+			"Referer": "https://www.google.com/",
+			"DNT": "1",
+			"Connection": "keep-alive",
+			"Upgrade-Insecure-Requests": "1"
+		},
+		]
+
+headers = random.choice(headers)
 
 url = "https://www.immobilienscout24.de/Suche/radius/haus-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
 
-headers = {
-    'User-Agent': 'Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0',
-}
-params = dict(
-	Accept="text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-	referer = "https://www.google.com",
-	Control = "max-age=0",
-	Connection="keep-alive",
-	Cookie = "seastate=\"TGFzdFNlYXJjaA==:ZmFsc2UsMTYwNTUzOTc1MDI2NywvZGUvbmllZGVyc2FjaHNlbi93b2xmc2J1cmcvd29obnVuZy1taWV0ZW4=\"; feature_ab_tests=\"IF311@2=NEW|XTypeSearch@3=Default\"; ABNTEST=1605538429; is24_experiment_visitor_id=04922a4d-3393-4333-95c7-68ec64d492fa; AWSALB=7ZOh1vSgI0DvIBai63sj4d0mSocpCNaihzskjOT+OtPtO3VgElnXzkXDnyopXOJh69sg1CXTzJFTmWE+42Mb4VSVF9hZtY5cQS2vlB6v+NrfU9EVh1jHLQ8aLLGQ; AWSALBCORS=7ZOh1vSgI0DvIBai63sj4d0mSocpCNaihzskjOT+OtPtO3VgElnXzkXDnyopXOJh69sg1CXTzJFTmWE+42Mb4VSVF9hZtY5cQS2vlB6v+NrfU9EVh1jHLQ8aLLGQ; IS24VisitIdSC=sidd9deffd1-89b7-4a0b-936f-4f0f3aee8906; IS24VisitId=vid7bacbb5b-4696-4651-abf8-0c157a9f5258; websessionid=1DDF645E74C35CE7D4422AB7709C6B7D; longUnreliableState=\"dWlkcg==:YS05MmExYTQ0MDFkNWM0NzRlYTU0MDcxMzNlM2ZmNTc1OA==\"; reese84=3:y2ZoLMDtCuZREolU5p+2tg==:BhHE6xotXvvvEfM6r/CbLKUFnt62QbgbeiR92HxCHAmjz5QItN3J7VhIRDGdRANwlgvnvOzn9U4Pu1NhArAd5OTbNuErm4Kecf17lE79VqdiiU1mKn7kzDv8Qg1OQMb3Y2K5gidzU9HLNQtQXgzwWZG4dMmGttitfc+fMvja1J4nf8S55nDpfBL6V7UbEYwEY2fwk4HDgTNgypWByKoe963PYdrf1wagams8V+sjb3kdD3iwotxr+7GcM3RNiIbgtcKhIHqap+aPKTHAww8it/ZvsZEgtTAbUEwQDLk38EutzOI2ynTC7QC4A7ZXR4QdBbYnaDGRXqZO+YXyvc+WyA67rdytJ4er/c21idZSBhvh+iY2HKKzJ4eMtWxywc5zYnvzzADmLvEL690Em8U5agzDukvA8bmj/MSqMBckBv676H6OEnLt9slr2iV/GrpFmGU2U+CvhcRHcmS35dblVEjQM79FPbZemHM34UpMtC7szZVcOrfXWc55x54l4SFT:biqK+15qdYBlN4Urry5FjWtMcfKQTgYCv0rRntzZC+Q=",
-	TE="Trailers",
-	Host="www.immobilienscout24.de",
-	)
-
 # Get parent page
 def fetch_parent():
+    
 	response = requests.get(url, headers=headers)
 	print(response.status_code)
 	#print(response.text)
@@ -43,26 +48,37 @@ def fetch_parent():
 	ls_expose = (set(ls_expose))
 	ls_expose = list(ls_expose)
 	# Get link to first details page
- 
+
 	# Get expose link for each of 20 detail pages, visit it, and parse details
-	for i in ls_expose:
-		relative_link = i
+
+	for i, exp in enumerate(ls_expose):
+		relative_link = exp
 		url2 = urljoin('https://www.immobilienscout24.de/', relative_link)
 		response = requests.get(url2, headers=headers)
 		soup = BeautifulSoup(response.content, features="lxml")
 		parse_details(soup)
-		sleep(randint(1,180))
+		if i % 5 == 4:
+			print("switch vpn") ### TBC
+			sleep(80) # TBC
+
+# get next 20 listings
+def nav_next_parent():
+	pass
 
 # parse child page #
 def parse_details(soup):
 
-	# PRICE
-	try:
-		price = soup.find('div', class_ ='is24qa-kaufpreis-main is24-value font-semibold is24-preis-value')
-		print(price.text)
-	except:
-	    pass
- 
+	print("----------")
+	address=''
+	price='' 
+	postcode=''
+	livingspace='' 
+	rooms='' 
+	parking=''
+	provision=''
+	provision_note=''
+	mieteinnahmen=''
+	hausgeld=''
 	# ADDRESS
 	try:
 		address = soup.find('div', class_='font-ellipsis').text
@@ -71,20 +87,36 @@ def parse_details(soup):
 	except:
 		pass
 
-	# POSTCODE
-	postcode = soup.find('span', class_ = 'zip-region-and-country').text
-	print(postcode)
+	# PRICE
+	try:
+		price = soup.find('div', class_ ='is24qa-kaufpreis-main is24-value font-semibold is24-preis-value')
+		price = price.text
+		print(price)
+	except:
+		pass
 
-	# LIVING SPACE
-	livingspace = soup.find('dd', class_ =  'is24qa-wohnflaeche-ca grid-item three-fifths').text
-	livingspace = livingspace.strip()
-	print(livingspace)
+	# POSTCODE # 
+	try:
+		postcode = soup.find('span', class_ = 'zip-region-and-country').text
+		print(postcode)
+	except:
+		pass
+
+	# LIVING SPACE #
+	try:
+		livingspace = soup.find('dd', class_ =  'is24qa-wohnflaeche-ca grid-item three-fifths').text
+		livingspace = livingspace.strip()
+		print(livingspace)
+	except:
+		pass
 
 	# ROOMS
-	rooms = soup.find('dd', class_ = 'is24qa-zimmer').text
-	rooms = rooms.strip()
-	print(rooms)
-
+	try:
+		rooms = soup.find('dd', class_ = 'is24qa-zimmer').text
+		rooms = rooms.strip()
+		print(rooms)
+	except:
+		pass
 	# PARKING
 	try:
 		parking = soup.find('dd', class_ = 'is24qa-garage-stellplatz grid-item three-fifths').text
@@ -127,9 +159,31 @@ def parse_details(soup):
 		print(hausgeld)
 	except:
 		pass
+	
+ 
+	headers=['address', 
+		'price', 
+		'postcode', 
+		'livingspace', 
+		'rooms', 
+		'parking',
+		'provision',
+		'provision_note',
+		'mieteinnahmen',
+		'hausgeld' ]
+
+	file_exists = os.path.isfile('immo_results.csv')
+ 
+	with open('immo_results.csv', 'a+',newline='') as csvfile:
+		writer = csv.DictWriter(csvfile, delimiter=',', lineterminator='\n',fieldnames=headers)
+		if not file_exists:
+			writer.writeheader()
+		writer.writerow({'address':address,'price':price, 'postcode':postcode,'livingspace':livingspace,'rooms':rooms,'parking':parking,'provision':provision, 'provision_note':provision_note,'mieteinnahmen':mieteinnahmen,'hausgeld':hausgeld})
+
+	sleep(1)
 
 # Main Driver #
 if __name__ == '__main__':
-    
+
 	fetch_parent()
 	
