@@ -10,3 +10,6 @@ Web Scraping with BS4
     for a in soup.select('a'):
                 if 'expose' in a['href']:
                             ls_expose.append(a['href'])
+# VPN Rotate
+    server=$(cat '/etc/openvpn/privatvpn.conf' | grep remote -m1 | cut -d" " -f2)
+    nextserver=$(grep -A1 $server /etc/openvpn/list.txt|grep -v $server)
