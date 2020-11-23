@@ -5,6 +5,7 @@
 
 # https://www.immobilienscout24.de/sitemap.html
 # https://www.immobilienscout24.de/geoautocomplete/v3/locations.json?i=mannheim
+# Best to run this on Linux as it will use subprocess to call a bash script to change VPN
 
 import os.path
 import random
@@ -15,7 +16,11 @@ from urllib.parse import urljoin
 from random import randint
 from time import sleep
 import csv
+import subprocess
+from sys import platform
 
+if platform == "linux" or platform == "linux2":
+    print("your OS is Linux - this is the correct OS for this code")
 
 headers = [
 		# Firefox 77 Mac
@@ -33,11 +38,13 @@ headers = [
 headers = random.choice(headers)
 
 url = "https://www.immobilienscout24.de/Suche/radius/haus-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
+url_page2 = "https://www.immobilienscout24.de/Suche/radius/haus-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&pagenumber=2"
+
 
 # Get parent page
-def fetch_parent():
+def fetch_parent(iurl):
     
-	response = requests.get(url, headers=headers)
+	response = requests.get(iurl, headers=headers)
 	print(response.status_code)
 	#print(response.text)
 	soup = BeautifulSoup(response.content, features="lxml")
@@ -58,8 +65,9 @@ def fetch_parent():
 		soup = BeautifulSoup(response.content, features="lxml")
 		parse_details(soup)
 		if i % 5 == 4:
-			print("switch vpn") ### TBC
-			sleep(80) # TBC
+			print("now switch vpn") ### TBC
+			# subprocess.call("ls") # check if os = linux
+			sleep(60) # TBC
 
 # get next 20 listings
 def nav_next_parent():
@@ -79,6 +87,8 @@ def parse_details(soup):
 	provision_note=''
 	mieteinnahmen=''
 	hausgeld=''
+	expose=''
+ 
 	# ADDRESS
 	try:
 		address = soup.find('div', class_='font-ellipsis').text
@@ -159,6 +169,13 @@ def parse_details(soup):
 		print(hausgeld)
 	except:
 		pass
+
+	# expose link
+	try:
+		print('expose=')
+		print('')
+	except:
+		pass
 	
  
 	headers=['address', 
@@ -170,7 +187,8 @@ def parse_details(soup):
 		'provision',
 		'provision_note',
 		'mieteinnahmen',
-		'hausgeld' ]
+		'hausgeld',
+		'expose']
 
 	file_exists = os.path.isfile('immo_results.csv')
  
@@ -178,12 +196,15 @@ def parse_details(soup):
 		writer = csv.DictWriter(csvfile, delimiter=',', lineterminator='\n',fieldnames=headers)
 		if not file_exists:
 			writer.writeheader()
-		writer.writerow({'address':address,'price':price, 'postcode':postcode,'livingspace':livingspace,'rooms':rooms,'parking':parking,'provision':provision, 'provision_note':provision_note,'mieteinnahmen':mieteinnahmen,'hausgeld':hausgeld})
+		writer.writerow({'address':address,'price':price, 'postcode':postcode,'livingspace':livingspace,'rooms':rooms,'parking':parking,'provision':provision, 'provision_note':provision_note,'mieteinnahmen':mieteinnahmen,'hausgeld':hausgeld, 'expose':expose})
 
 	sleep(1)
 
 # Main Driver #
 if __name__ == '__main__':
 
-	fetch_parent()
+	fetch_parent(url)
 	
+	for i in range (2,10):
+		url_nextpage = "https://www.immobilienscout24.de/Suche/radius/haus-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&pagenumber={}".format(i)
+		fetch_parent(url_nextpage)
