@@ -13,3 +13,6 @@ Web Scraping with BS4
 # VPN Rotate
     server=$(cat '/etc/openvpn/privatvpn.conf' | grep remote -m1 | cut -d" " -f2)
     nextserver=$(grep -A1 $server /etc/openvpn/list.txt|grep -v $server)
+    
+## sed
+    sed -i "s!$server!$nextserver2!"
