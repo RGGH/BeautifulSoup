@@ -16,3 +16,6 @@ Web Scraping with BS4
     
 ## sed
     sed -i "s!$server!$nextserver2!"
+  
+ # Proxy Version = immo24de_prx
+     update line 22 with trial API key - you will need to sign up with them first
