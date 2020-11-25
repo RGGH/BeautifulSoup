@@ -2,7 +2,6 @@
 #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #|r|e|d|a|n|d|g|r|e|e|n|.|c|o|.|u|k|
 #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
 # https://www.immobilienscout24.de/sitemap.html
 # https://www.immobilienscout24.de/geoautocomplete/v3/locations.json?i=mannheim
 #
@@ -19,14 +18,16 @@ import subprocess
 from sys import platform
 
 from scraper_api import ScraperAPIClient
-client = ScraperAPIClient("4e3d10c2650ed52c85a41c7xxxxxxx") # use your own api key (register for trial)
+client = ScraperAPIClient("4d3d10c2650dd52b85x41x7xd8c6cx6x") # use your own api key (register for trial)
 
 if platform == "linux" or platform == "linux2":
     print("your OS is Linux - this is the correct OS for this code")
 
 #'Haus'
-url = "https://www.immobilienscout24.de/Suche/radius/haus-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
+# url = "https://www.immobilienscout24.de/Suche/radius/haus-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
 
+# 'Wohnung'
+url = "https://www.immobilienscout24.de/Suche/radius/wohnung-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
 
 # Get parent page
 def fetch_parent(iurl):
@@ -52,14 +53,13 @@ def fetch_parent(iurl):
 		soup = BeautifulSoup(response.content, features="lxml")
 		parse_details(soup, url2)
 		if i % 5 == 4:
-			sleep(randint(1,20))
-			print("now switch vpn") ### TBC
-			# subprocess.call("ls") # check if os = linux
+			sleep(randint(1,10))
 
 # parse child page #
 def parse_details(soup, url2):
 
 	print("----------")
+	title=''
 	address=''
 	price='' 
 	postcode=''
@@ -72,6 +72,13 @@ def parse_details(soup, url2):
 	hausgeld=''
 	expose=url2
  
+	# TITLE
+	try:
+		title = soup.find('h5', class_='result-list-entry__brand-title font-h6 onlyLarge margin-bottom-none maxtwolinerHeadline font-white').text
+		print(title)
+	except:
+		pass
+
 	# ADDRESS
 	try:
 		address = soup.find('div', class_='font-ellipsis').text
@@ -83,6 +90,14 @@ def parse_details(soup, url2):
 	# PRICE
 	try:
 		price = soup.find('div', class_ ='is24qa-kaufpreis-main is24-value font-semibold is24-preis-value')
+		price = price.text
+		print(price)
+	except:
+		pass
+	
+	# for appartment
+	try:
+		price = soup.find('div', class_ ='is24qa-kaufpreis-main is24-value font-semibold')
 		price = price.text
 		print(price)
 	except:
@@ -146,8 +161,9 @@ def parse_details(soup, url2):
 	
 	# Hausegeld
 	try:
-		hausgeld = soup.find('span', class_ = 'is24qa-hausgeld').text
-		hausgeld = hausgeld.strip()
+		hausgeld = soup.find('dd', class_ = 'is24qa-hausgeld grid-item three-fifths').text
+		hausgeld = hausgeld.split()
+		hausgeld = hausgeld[0]
 		print("hausgeld=")
 		print(hausgeld)
 	except:
@@ -156,12 +172,14 @@ def parse_details(soup, url2):
 	# expose link
 	try:
 		print('expose=')
-		print('')
+		print(expose)
 	except:
 		pass
 	
  
-	headers=['address', 
+	headers=[
+		'title',
+		'address', 
 		'price', 
 		'postcode', 
 		'livingspace', 
@@ -179,7 +197,7 @@ def parse_details(soup, url2):
 		writer = csv.DictWriter(csvfile, delimiter=',', lineterminator='\n',fieldnames=headers)
 		if not file_exists:
 			writer.writeheader()
-		writer.writerow({'address':address,'price':price, 'postcode':postcode,'livingspace':livingspace,'rooms':rooms,'parking':parking,'provision':provision, 'provision_note':provision_note,'mieteinnahmen':mieteinnahmen,'hausgeld':hausgeld, 'expose':expose})
+		writer.writerow({'title':title,'address':address,'price':price, 'postcode':postcode,'livingspace':livingspace,'rooms':rooms,'parking':parking,'provision':provision, 'provision_note':provision_note,'mieteinnahmen':mieteinnahmen,'hausgeld':hausgeld, 'expose':expose})
 
 	sleep(1)
 
@@ -188,6 +206,6 @@ if __name__ == '__main__':
 
 	fetch_parent(url)
 	
-	for i in range (2,92):
-		url_nextpage = "https://www.immobilienscout24.de/Suche/radius/haus-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&pagenumber={}".format(i)
+	for i in range (2,67):
+		url_nextpage = "https://www.immobilienscout24.de/Suche/radius/wohnung-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&pagenumber={}".format(i)
 		fetch_parent(url_nextpage)
