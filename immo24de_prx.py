@@ -15,15 +15,19 @@ import mysql.connector
 from mysql.connector import errorcode
 from sys import platform
 
-# Use same posted time for entire run 
+# Use same posted time for entire run
 now = datetime.now()
-formatted_date = now.strftime('%Y-%m-%d %H:%M:%S')
+posted = now.strftime('%Y-%m-%d %H:%M:%S')
 
+# Configure scraper modes here
 # Set csv to false to write to database
 export_csv = False
+mode = 2
 
 from scraper_api import ScraperAPIClient
-client = ScraperAPIClient("8da8727186d0c7xxxxxxxxxxxxxxxxxxx") # use your own api key (register for trial)
+client = ScraperAPIClient("8da8727186d0c75d547e38aad2e70163") # use your own api key (register for trial)
+
+# scraper startup messages #
 
 if platform == "linux" or platform == "linux2":
     print("OS is Linux - this is the correct OS for this code\n")
@@ -31,15 +35,23 @@ if platform == "linux" or platform == "linux2":
 if export_csv == False:
 	print("Export to Database mode - no CSV\n")
 
-#'Haus'
-# url = "https://www.immobilienscout24.de/Suche/radius/haus-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
+print (f"Mode={mode} : 1= Buy House, 2=Buy Apartment 3=Rent Apartment\n")
 
-# 'Wohnung'
-url = "https://www.immobilienscout24.de/Suche/radius/wohnung-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
+if mode == 1:
+	#'Haus' - 'Kaufen' = House - BUY
+	url = "https://www.immobilienscout24.de/Suche/radius/haus-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
+if mode == 2:
+	# 'Wohnung' - 'Kaufen' =  Apartment - BUY
+	url = "https://www.immobilienscout24.de/Suche/radius/wohnung-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
+if mode == 3:
+        # 'Wohnung' - 'Mieten' = Apartment - RENT
+	url = "https://www.immobilienscout24.de/Suche/radius/wohnung-mieten?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
+
+# end of messages, beghin code #
 
 # Get parent page
 def fetch_parent(iurl):
-    
+
 	response = client.get(iurl)
 	print(response.status_code)
 	#print(response.text)
@@ -47,7 +59,7 @@ def fetch_parent(iurl):
 	ls_expose = []
 	for a in soup.select('a'):
 				if 'expose' in a['href']:
-					ls_expose.append(a['href'])            
+					ls_expose.append(a['href'])
 	ls_expose = (set(ls_expose))
 	ls_expose = list(ls_expose)
 	# Get link to first details page
@@ -68,11 +80,11 @@ def parse_details(soup, url2):
 
 	print("----------")
 	title=''
-	price='' 
+	price=''
 	postcode=''
 	addressblock=''
-	livingspace='' 
-	rooms='' 
+	livingspace=''
+	rooms=''
 	parking=''
 	provision=''
 	wohnungstyp=''
@@ -83,7 +95,9 @@ def parse_details(soup, url2):
 	mieteinnahmen=''
 	hausgeld=''
 	expose=url2
- 
+	expose_id = url2.split('/')[-1]
+	mode=''
+
 	# TITLE
 	try:
 		title = soup.find('h1', class_='font-semibold font-xl margin-bottom margin-top-m palm-font-l font-line-s').text
@@ -95,26 +109,30 @@ def parse_details(soup, url2):
 	try:
 		price = soup.find('div', class_ ='is24qa-kaufpreis-main is24-value font-semibold is24-preis-value')
 		price = price.text
-		print(price)
-	except:
-		pass
-	
-	# for apartment
-	try:
-		price = soup.find('div', class_ ='is24qa-kaufpreis-main is24-value font-semibold')
-		price = price.text
+		price = price.replace('€','')
+		price = price.replace('.','')
 		print(price)
 	except:
 		pass
 
-	# POSTCODE # 
+	# for apartment
+	try:
+		price = soup.find('div', class_ ='is24qa-kaufpreis-main is24-value font-semibold')
+		price = price.text
+		price = price.replace('€','')
+		price = price.replace('.','')
+		print(price)
+	except:
+		pass
+
+	# POSTCODE #
 	try:
 		postcode = soup.find('span', class_ = 'zip-region-and-country').text
 		print(postcode)
 	except:
 		pass
 
-	# Address block 
+	# Address block
 	try:
 		addressblock = soup.find('div', class_ = 'address-block').text
 		print(addressblock)
@@ -171,6 +189,8 @@ def parse_details(soup, url2):
 	# Parking Space Purchase Price - kaufpreis_stellplatz
 	try:
 		kaufpreis_stellplatz = soup.find('dd', class_ = 'is24qa-garage-stellplatz-kaufpreis grid-item three-fifths').text
+		kaufpreis_stellplatz = kaufpreis_stellplatz.replace('€','')
+		kaufpreis_stellplatz = kaufpreis_stellplatz.replace('.','')
 		print("kaufpreis_stellplatz")
 		print(kaufpreis_stellplatz)
 	except:
@@ -197,16 +217,16 @@ def parse_details(soup, url2):
 	try:
 		mieteinnahmen = soup.find('dd', class_ = 'is24qa-mieteinnahmen-pro-monat').text
 		mieteinnahmen= mieteinnahmen.strip()
+		mieteinnahmen= mieteinnahmne.replace('€','')
 		print("mieteinnahmen=")
 		print(mieteinnahmen)
 	except:
 		pass
-	
+
 	# Hausegeld
 	try:
 		hausgeld = soup.find('dd', class_ = 'is24qa-hausgeld grid-item three-fifths').text
-		hausgeld = hausgeld.split()
-		hausgeld = hausgeld[0]
+		hausgeld = hausgeld.replace('€','')
 		print("hausgeld=")
 		print(hausgeld)
 	except:
@@ -218,15 +238,14 @@ def parse_details(soup, url2):
 		print(expose)
 	except:
 		pass
-	
- 
+
 	headers=[
 		'title',
-		'price', 
+		'price',
 		'postcode',
-		'addressblock', 
-		'livingspace', 
-		'rooms', 
+		'addressblock',
+		'livingspace',
+		'rooms',
 		'parking',
 		'provision',
 		'wohnungstyp',
@@ -236,13 +255,16 @@ def parse_details(soup, url2):
 		'objektzustand',
 		'mieteinnahmen',
 		'hausgeld',
-		'expose']
+		'expose',
+		'expose_id',
+		'mode',
+		]
 
 	# CSV writer
 	if export_csv == True:
 		try:
 			file_exists = os.path.isfile('immo_results.csv')
-		
+
 			with open('immo_results.csv', 'a+',newline='') as csvfile:
 				writer = csv.DictWriter(csvfile, delimiter=',', lineterminator='\n',fieldnames=headers)
 				if not file_exists:
@@ -265,34 +287,85 @@ def parse_details(soup, url2):
 				database ='immodb'
 			)
 			curr = conn.cursor()
-			curr.execute("""CREATE TABLE IF NOT EXISTS kaufen (
+			curr.execute("""CREATE TABLE IF NOT EXISTS imt1 (
 				id INT AUTO_INCREMENT PRIMARY KEY,
 				title VARCHAR(255),
 				price VARCHAR(25),
-				postcode VARCHAR(255),
-				addressblock VARCHAR(255),
-				rooms VARCHAR(25),
-				parking VARCHAR(255),
-				provision VARCHAR(255),
+				postcode TEXT(255),
+				addressblock TEXT(255),
+				rooms TEXT(25),
+				parking TEXT (255),
+				provision TEXT (255),
 				wohnungstyp VARCHAR(255),
 				etage VARCHAR(25),
-				kaufpreis_stellplatz VARCHAR(255),
+				kaufpreis_stellplatz TEXT(25),
 				baujahr VARCHAR(25),
 				objektzustand VARCHAR(255),
 				mieteinnahmen VARCHAR(255),
-				hausgeld VARCHAR(255),
+				hausgeld TEXT(255),
 				expose VARCHAR(255),
+				expose_id VARCHAR(12),
+				mode TEXT (2),
 				posted TIMESTAMP
 				)
 				""")
 		except:
 			print("error connecting to DB")
 
+
+		finally:
+			myquery = """INSERT into imt1 (
+                title,
+                price,
+                postcode,
+                addressblock,
+                rooms,
+                parking,
+                provision,
+                wohnungstyp,
+                etage,
+                kaufpreis_stellplatz,
+                baujahr,
+                objektzustand,
+                mieteinnahmen,
+                hausgeld,
+                expose,
+		expose_id,
+		mode,
+                posted
+		)
+		        values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+
+			val=(
+                	title,
+                	price,
+                	postcode,
+                	addressblock,
+                	rooms,
+                	parking,
+                	provision,
+                	wohnungstyp,
+                	etage,
+                	kaufpreis_stellplatz,
+                	baujahr,
+                	objektzustand,
+                	mieteinnahmen,
+                	hausgeld,
+                	expose,
+			expose_id,
+			mode,
+                	posted
+            		)
+			# Insert into DB
+			curr.execute(myquery, val)
+			conn.commit()
+			conn.close()
+
 # Main Driver #
 if __name__ == '__main__':
 
 	fetch_parent(url)
-	
 	for i in range (2,67):
-		url_nextpage = "https://www.immobilienscout24.de/Suche/radius/wohnung-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&pagenumber={}".format(i)
+		url_nextpage = url.replace("enteredFrom=one_step_search","pagenumber={}".format(i))
 		fetch_parent(url_nextpage)
+
