@@ -2,8 +2,6 @@
 #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #|r|e|d|a|n|d|g|r|e|e|n|.|c|o|.|u|k|
 #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-# https://www.immobilienscout24.de/sitemap.html
-# https://www.immobilienscout24.de/geoautocomplete/v3/locations.json?i=mannheim
 #
 import os.path
 import random
@@ -18,10 +16,10 @@ import subprocess
 from sys import platform
 
 from scraper_api import ScraperAPIClient
-client = ScraperAPIClient("4d3d10c2650dd52b85x41x7xd8c6cx6x") # use your own api key (register for trial)
+client = ScraperAPIClient("4e2d50c2350edxtc85a41c70d8c6cc91") # use your own api key (register for trial)
 
 if platform == "linux" or platform == "linux2":
-    print("your OS is Linux - this is the correct OS for this code")
+    print("OS is Linux - this is the correct OS for this code")
 
 #'Haus'
 # url = "https://www.immobilienscout24.de/Suche/radius/haus-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
@@ -60,30 +58,26 @@ def parse_details(soup, url2):
 
 	print("----------")
 	title=''
-	address=''
 	price='' 
 	postcode=''
+	addressblock=''
 	livingspace='' 
 	rooms='' 
 	parking=''
 	provision=''
-	provision_note=''
+	wohnungstyp=''
+	etage=''
+	kaufpreis_stellplatz=''
+	baujahr=''
+	objektzustand=''
 	mieteinnahmen=''
 	hausgeld=''
 	expose=url2
  
 	# TITLE
 	try:
-		title = soup.find('h5', class_='result-list-entry__brand-title font-h6 onlyLarge margin-bottom-none maxtwolinerHeadline font-white').text
+		title = soup.find('h1', class_='font-semibold font-xl margin-bottom margin-top-m palm-font-l font-line-s').text
 		print(title)
-	except:
-		pass
-
-	# ADDRESS
-	try:
-		address = soup.find('div', class_='font-ellipsis').text
-		address = address.replace(',', '')
-		print(address)
 	except:
 		pass
 
@@ -95,7 +89,7 @@ def parse_details(soup, url2):
 	except:
 		pass
 	
-	# for appartment
+	# for apartment
 	try:
 		price = soup.find('div', class_ ='is24qa-kaufpreis-main is24-value font-semibold')
 		price = price.text
@@ -107,6 +101,13 @@ def parse_details(soup, url2):
 	try:
 		postcode = soup.find('span', class_ = 'zip-region-and-country').text
 		print(postcode)
+	except:
+		pass
+
+	# Address block 
+	try:
+		addressblock = soup.find('div', class_ = 'address-block').text
+		print(addressblock)
 	except:
 		pass
 
@@ -141,14 +142,46 @@ def parse_details(soup, url2):
 	except:
 		pass
 
-	# PROVISION_NOTE
+	# Apartment type - wohnungstyp
 	try:
-		provision_note = soup.find('dd', class_ = 'is24qa-provision-note').text
-		provision_note = provision_note.strip()
-		print("provision note")
-		print(provision_note)
+		wohnungstyp = soup.find('dd', class_ = 'is24qa-typ grid-item three-fifths').text
+		print("wohnungstyp")
+		print(wohnungstyp)
 	except:
 		pass
+
+	# Floors - etage
+	try:
+		etage = soup.find('dd', class_ = 'is24qa-etage grid-item three-fifths').text
+		print("etage")
+		print(etage)
+	except:
+		pass
+
+	# Parking Space Purchase Price - kaufpreis_stellplatz
+	try:
+		kaufpreis_stellplatz = soup.find('dd', class_ = 'is24qa-garage-stellplatz-kaufpreis grid-item three-fifths').text
+		print("kaufpreis_stellplatz")
+		print(kaufpreis_stellplatz)
+	except:
+		pass
+
+	# Build year - baujahr
+	try:
+		baujahr = soup.find('dd', class_ = 'is24qa-baujahr grid-item three-fifths').text
+		print("baujahr")
+		print(baujahr)
+	except:
+		pass
+
+	# Property condition - Objektzustand
+	try:
+		objektzustand = soup.find('dd', class_ = 'is24qa-objektzustand grid-item three-fifths').text
+		print("objektzustand")
+		print(objektzustand)
+	except:
+		pass
+
 
 	# Mieteinnahmen
 	try:
@@ -179,14 +212,18 @@ def parse_details(soup, url2):
  
 	headers=[
 		'title',
-		'address', 
 		'price', 
-		'postcode', 
+		'postcode',
+		'addressblock', 
 		'livingspace', 
 		'rooms', 
 		'parking',
 		'provision',
-		'provision_note',
+		'wohnungstyp',
+		'etage',
+		'kaufpreis_stellplatz',
+		'baujahr',
+		'objektzustand',
 		'mieteinnahmen',
 		'hausgeld',
 		'expose']
@@ -197,7 +234,7 @@ def parse_details(soup, url2):
 		writer = csv.DictWriter(csvfile, delimiter=',', lineterminator='\n',fieldnames=headers)
 		if not file_exists:
 			writer.writeheader()
-		writer.writerow({'title':title,'address':address,'price':price, 'postcode':postcode,'livingspace':livingspace,'rooms':rooms,'parking':parking,'provision':provision, 'provision_note':provision_note,'mieteinnahmen':mieteinnahmen,'hausgeld':hausgeld, 'expose':expose})
+		writer.writerow({'title':title,'price':price, 'postcode':postcode,'addressblock':addressblock,'livingspace':livingspace,'rooms':rooms,'parking':parking,'provision':provision, 'wohnungstyp':wohnungstyp,'etage':etage,'kaufpreis_stellplatz':kaufpreis_stellplatz, 'baujahr':baujahr,'objektzustand':objektzustand,'mieteinnahmen':mieteinnahmen,'hausgeld':hausgeld, 'expose':expose})
 
 	sleep(1)
 
