@@ -1,6 +1,8 @@
 # BeautifulSoup
 Web Scraping with BS4
 
+#### The branch has MySQL version
+
 #### Noteworthy Code: 
     'set' - need to convert it back to a list
     'urljoin`
