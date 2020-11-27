@@ -4,22 +4,32 @@
 #+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 #
 import os.path
-import random
 import requests
-from pprint import pprint
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from random import randint
 from time import sleep
+from datetime import datetime
 import csv
-import subprocess
+import mysql.connector
+from mysql.connector import errorcode
 from sys import platform
 
+# Use same posted time for entire run 
+now = datetime.now()
+formatted_date = now.strftime('%Y-%m-%d %H:%M:%S')
+
+# Set csv to false to write to database
+export_csv = False
+
 from scraper_api import ScraperAPIClient
-client = ScraperAPIClient("4e2d50c2350edxtc85a41c70d8c6cc91") # use your own api key (register for trial)
+client = ScraperAPIClient("8da8727186d0c7xxxxxxxxxxxxxxxxxxx") # use your own api key (register for trial)
 
 if platform == "linux" or platform == "linux2":
-    print("OS is Linux - this is the correct OS for this code")
+    print("OS is Linux - this is the correct OS for this code\n")
+
+if export_csv == False:
+	print("Export to Database mode - no CSV\n")
 
 #'Haus'
 # url = "https://www.immobilienscout24.de/Suche/radius/haus-kaufen?centerofsearchaddress=Mannheim;;;1276001025;Baden-W%C3%BCrttemberg;&geocoordinates=49.50057;8.50248;50.0&enteredFrom=one_step_search"
@@ -228,15 +238,55 @@ def parse_details(soup, url2):
 		'hausgeld',
 		'expose']
 
-	file_exists = os.path.isfile('immo_results.csv')
- 
-	with open('immo_results.csv', 'a+',newline='') as csvfile:
-		writer = csv.DictWriter(csvfile, delimiter=',', lineterminator='\n',fieldnames=headers)
-		if not file_exists:
-			writer.writeheader()
-		writer.writerow({'title':title,'price':price, 'postcode':postcode,'addressblock':addressblock,'livingspace':livingspace,'rooms':rooms,'parking':parking,'provision':provision, 'wohnungstyp':wohnungstyp,'etage':etage,'kaufpreis_stellplatz':kaufpreis_stellplatz, 'baujahr':baujahr,'objektzustand':objektzustand,'mieteinnahmen':mieteinnahmen,'hausgeld':hausgeld, 'expose':expose})
-
+	# CSV writer
+	if export_csv == True:
+		try:
+			file_exists = os.path.isfile('immo_results.csv')
+		
+			with open('immo_results.csv', 'a+',newline='') as csvfile:
+				writer = csv.DictWriter(csvfile, delimiter=',', lineterminator='\n',fieldnames=headers)
+				if not file_exists:
+					writer.writeheader()
+				writer.writerow({'title':title,'price':price, 'postcode':postcode,'addressblock':addressblock,'livingspace':livingspace,'rooms':rooms,'parking':parking,'provision':provision, 'wohnungstyp':wohnungstyp,'etage':etage,'kaufpreis_stellplatz':kaufpreis_stellplatz, 'baujahr':baujahr,'objektzustand':objektzustand,'mieteinnahmen':mieteinnahmen,'hausgeld':hausgeld, 'expose':expose})
+		except:
+			print('error with csv')
 	sleep(1)
+
+	# MySQL writer
+	if export_csv == False:
+
+    # Connect to DB
+		try:
+			conn = mysql.connector.connect(
+				user = 'user1',
+				passwd = 'password1',
+				host = 'localhost',
+				port=3306,
+				database ='immodb'
+			)
+			curr = conn.cursor()
+			curr.execute("""CREATE TABLE IF NOT EXISTS kaufen (
+				id INT AUTO_INCREMENT PRIMARY KEY,
+				title VARCHAR(255),
+				price VARCHAR(25),
+				postcode VARCHAR(255),
+				addressblock VARCHAR(255),
+				rooms VARCHAR(25),
+				parking VARCHAR(255),
+				provision VARCHAR(255),
+				wohnungstyp VARCHAR(255),
+				etage VARCHAR(25),
+				kaufpreis_stellplatz VARCHAR(255),
+				baujahr VARCHAR(25),
+				objektzustand VARCHAR(255),
+				mieteinnahmen VARCHAR(255),
+				hausgeld VARCHAR(255),
+				expose VARCHAR(255),
+				posted TIMESTAMP
+				)
+				""")
+		except:
+			print("error connecting to DB")
 
 # Main Driver #
 if __name__ == '__main__':
