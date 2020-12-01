@@ -1,5 +1,5 @@
 # BeautifulSoup
-Web Scraping with BS4
+Web Scraping with BS4 - see Branch for additions
 
 #### The branch has MySQL version
 
