@@ -22,7 +22,9 @@ Web Scraping with BS4
  
      response = client.get(iurl) # this is in place of "requests.get(iurl)
      
- # Get all dropdown values from html     
+ # Get all dropdown values from html
+ ### using page saved locally, for testing
+ 
     from bs4 import BeautifulSoup
     import requests
 
@@ -36,6 +38,8 @@ Web Scraping with BS4
     print(textValues)
     
  ## Get all dropdown values from html AND convert values to int
+ ### using page saved locally, for testing
+ 
      from bs4 import BeautifulSoup
      import requests
 
