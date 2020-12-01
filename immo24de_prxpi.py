@@ -15,6 +15,9 @@ import mysql.connector
 from mysql.connector import errorcode
 from sys import platform
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # Use same posted time for entire run
 now = datetime.now()
 posted = now.strftime('%Y-%m-%d %H:%M:%S')
@@ -22,10 +25,14 @@ posted = now.strftime('%Y-%m-%d %H:%M:%S')
 # Configure scraper modes here
 # Set csv to false to write to database
 export_csv = False
-mode = 2
+
+# set mode for scraper here <
+mode = 3
+
+API_KEY = os.getenv("Scraper_API")
 
 from scraper_api import ScraperAPIClient
-client = ScraperAPIClient("8da8727186d0xxxxxxxxxxxxxxxxx") # use your own api key (register for trial)
+client = ScraperAPIClient(API_KEY) # use your own api key (register for trial)
 
 # scraper startup messages #
 
@@ -50,7 +57,7 @@ if mode == 3:
 # end of messages, beghin code #
 
 # Get parent page
-def fetch_parent(iurl):
+def fetch_parent(iurl, mode):
 
 	response = client.get(iurl)
 	print(response.status_code)
@@ -71,12 +78,12 @@ def fetch_parent(iurl):
 		url2 = urljoin('https://www.immobilienscout24.de/', relative_link)
 		response = client.get(url2)
 		soup = BeautifulSoup(response.content, features="lxml")
-		parse_details(soup, url2)
+		parse_details(soup, url2, mode)
 		if i % 5 == 4:
 			sleep(randint(1,10))
 
 # parse child page #
-def parse_details(soup, url2):
+def parse_details(soup, url2, mode):
 
 	print("----------")
 	title=''
@@ -93,10 +100,13 @@ def parse_details(soup, url2):
 	baujahr=''
 	objektzustand=''
 	mieteinnahmen=''
+	nebenkosten=''
+	gesamtmiete=''
+	mietefurgarage_stellplatz=''
 	hausgeld=''
 	expose=url2
 	expose_id = url2.split('/')[-1]
-	mode=''
+
 
 	# TITLE
 	try:
@@ -117,7 +127,7 @@ def parse_details(soup, url2):
 
 	# for apartment
 	try:
-		price = soup.find('div', class_ ='is24qa-kaufpreis-main is24-value font-semibold')
+		price = soup.find('div', class_ ='is24qa-kaltmiete-main is24-value font-semibold is24-preis-value')
 		price = price.text
 		price = price.replace('€','')
 		price = price.replace('.','')
@@ -222,6 +232,32 @@ def parse_details(soup, url2):
 		print(mieteinnahmen)
 	except:
 		pass
+	# 3 new columns
+
+	# nebenkosten
+	try:
+		nebenkosten = soup.find('dd', class_ = 'is24qa-nebenkosten grid-item three-fifths').text
+		nebenkosten = nebenkosten.replace('€','')
+		print("nebenkosten=")
+		print(nebenkosten)
+	except:
+		pass
+
+	# gesamtmiete
+	try:
+		gesamtmiete = soup.find('dd', class_ = 'is24qa-gesamtmiete grid-item three-fifths font-bold').text
+		print("gesamtmiete=")
+		print(gesamtmiete)
+	except:
+		pass
+
+	# mietefürgarage_stellplatz
+	try:
+		mietefurgarage_stellplatz = soup.find('dd', class_ = 'is24qa-miete-fuer-garagestellplatz grid-item three-fifths').text
+		print("mietefurgarage_stellplatz=")
+		print(mietefurgarage_stellplatz)
+	except:
+		pass
 
 	# Hausegeld
 	try:
@@ -254,13 +290,16 @@ def parse_details(soup, url2):
 		'baujahr',
 		'objektzustand',
 		'mieteinnahmen',
+		'nebenkosten', #new
+		'gesamtmiete', #new
+		'mietefurgarage_stellplatz', #new
 		'hausgeld',
 		'expose',
 		'expose_id',
-		'mode',
+		'mode'
 		]
 
-	# CSV writer
+	# CSV writer # deprecated for DB
 	if export_csv == True:
 		try:
 			file_exists = os.path.isfile('immo_results.csv')
@@ -280,19 +319,21 @@ def parse_details(soup, url2):
     # Connect to DB
 		try:
 			conn = mysql.connector.connect(
-				user = 'user1',
-				passwd = 'password1',
+				user = 'user2',
+				passwd = 'password2',
 				host = 'localhost',
 				port=3306,
 				database ='immodb'
 			)
+			print("we have a connection")
 			curr = conn.cursor()
-			curr.execute("""CREATE TABLE IF NOT EXISTS imt1 (
+			curr.execute("""CREATE TABLE IF NOT EXISTS imt2 (
 				id INT AUTO_INCREMENT PRIMARY KEY,
 				title VARCHAR(255),
 				price VARCHAR(25),
 				postcode TEXT(255),
 				addressblock TEXT(255),
+				livingspace VARCHAR(255),
 				rooms TEXT(25),
 				parking TEXT (255),
 				provision TEXT (255),
@@ -302,10 +343,13 @@ def parse_details(soup, url2):
 				baujahr VARCHAR(25),
 				objektzustand VARCHAR(255),
 				mieteinnahmen VARCHAR(255),
-				hausgeld TEXT(255),
+				nebenkosten VARCHAR(255),
+				gesamtmiete VARCHAR(255),
+				mietefurgarage_stellplatz VARCHAR(255),
+				hausgeld VARCHAR (255),
 				expose VARCHAR(255),
 				expose_id VARCHAR(12),
-				mode TEXT (2),
+				mode VARCHAR (2),
 				posted TIMESTAMP
 				)
 				""")
@@ -314,11 +358,12 @@ def parse_details(soup, url2):
 
 
 		finally:
-			myquery = """INSERT into imt1 (
+			myquery = """INSERT into imt2 (
                 title,
                 price,
                 postcode,
                 addressblock,
+		livingspace,
                 rooms,
                 parking,
                 provision,
@@ -328,19 +373,23 @@ def parse_details(soup, url2):
                 baujahr,
                 objektzustand,
                 mieteinnahmen,
+		nebenkosten,
+		gesamtmiete,
+		mietefurgarage_stellplatz,
                 hausgeld,
-                expose,
+		expose,
 		expose_id,
 		mode,
                 posted
 		)
-		        values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+		        values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
 
 			val=(
                 	title,
                 	price,
                 	postcode,
                 	addressblock,
+			livingspace,
                 	rooms,
                 	parking,
                 	provision,
@@ -350,8 +399,11 @@ def parse_details(soup, url2):
                 	baujahr,
                 	objektzustand,
                 	mieteinnahmen,
+			nebenkosten,
+			gesamtmiete,
+			mietefurgarage_stellplatz,
                 	hausgeld,
-                	expose,
+			expose,
 			expose_id,
 			mode,
                 	posted
@@ -364,8 +416,8 @@ def parse_details(soup, url2):
 # Main Driver #
 if __name__ == '__main__':
 
-	fetch_parent(url)
-	for i in range (2,67):
+	fetch_parent(url, mode)
+	for i in range (2,3):
 		url_nextpage = url.replace("enteredFrom=one_step_search","pagenumber={}".format(i))
-		fetch_parent(url_nextpage)
+		fetch_parent(url_nextpage, mode)
 
