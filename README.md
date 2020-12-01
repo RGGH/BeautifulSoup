@@ -35,7 +35,7 @@ Web Scraping with BS4
     textValues = [item.text for item in items]
     print(textValues)
     
- ## convert values to int
+ ## Get all dropdown values from html AND convert values to int
      from bs4 import BeautifulSoup
      import requests
 
