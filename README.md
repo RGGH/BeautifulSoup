@@ -38,7 +38,9 @@ Web Scraping with BS4
 <a href="https://github.com/RGGH/BeautifulSoup/edit/MySQL_version/README.md">
   <img src="https://github.com/RGGH/Misc/blob/master/dropdown_127_800w.png" alt="Dropdown Values" style="">
 </a> 
- 
+ <br>
+ #### soup.select('option[value]')
+ <br>
 <a href="https://github.com/RGGH/BeautifulSoup/edit/MySQL_version/README.md">
 <img src="https://github.com/RGGH/Misc/blob/master/get_dropdown_values-result_800w.png" alt="Get the dropdown Values" style="">
 </a> 
