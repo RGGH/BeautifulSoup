@@ -22,7 +22,7 @@ Web Scraping with BS4
  
      response = client.get(iurl) # this is in place of "requests.get(iurl)
      
- # Get all ropdown values from html     
+ # Get all dropdown values from html     
     from bs4 import BeautifulSoup
     import requests
 
