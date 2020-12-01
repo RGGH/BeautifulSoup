@@ -12,6 +12,7 @@ from email.mime.text import MIMEText
 from email.utils import formatdate
 from email import encoders
 
+# save user/pw info in .env in same dir
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -29,8 +30,8 @@ def send_mail(send_from,send_to,subject,text,files,server,port,username='',passw
     part.add_header('Content-Disposition', 'attachment; filename="im.csv"')
     msg.attach(part)
 
-    #context = ssl.SSLContext(ssl.PROTOCOL_SSLv3)
-    #SSL connection only working on Python 3+
+    # context = ssl.SSLContext(ssl.PROTOCOL_SSLv3)
+    # SSL connection only working on Python 3+
     smtp = smtplib.SMTP(server, port)
     if isTls:
         smtp.starttls()
@@ -38,6 +39,7 @@ def send_mail(send_from,send_to,subject,text,files,server,port,username='',passw
     smtp.sendmail(send_from, send_to, msg.as_string())
     smtp.quit()
 
+# use port 587 not 465 
 port = 587  # For SSL
 server = "smtp.gmail.com"
 send_from = os.getenv("send_from")  # Enter your address
@@ -47,6 +49,8 @@ subject = "test"
 text = "teXt"
 files = ""
 
-print(server,"\n", send_from,"\n", send_to)
-
-send_mail(send_from,send_to,subject,text,files,server,port,username=send_from,password=password,isTls=True)
+# main driver
+if __name__ == '__main__':
+    # send the email with csv file attachment from same dir ('im.csv')
+    print(server,"\n", send_from,"\n", send_to)
+    send_mail(send_from,send_to,subject,text,files,server,port,username=send_from,password=password,isTls=True)
