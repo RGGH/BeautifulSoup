@@ -21,3 +21,16 @@ Web Scraping with BS4
  update line 22 with trial API key - you will need to sign up with them first
  
      response = client.get(iurl) # this is in place of "requests.get(iurl)
+     
+ # Get all ropdown values from html     
+    from bs4 import BeautifulSoup
+    import requests
+
+    my_page = "Wohnung mieten im Umkreis von 50 km von Mannheim - ImmobilienScout24.html"
+
+    soup = BeautifulSoup(open(my_page),"lxml")
+    soup = soup.find('div',class_ = "select-input-wrapper")
+    items = soup.select('option[value]')
+    values = [item.get('value') for item in items]
+    textValues = [item.text for item in items]
+    print(textValues)
