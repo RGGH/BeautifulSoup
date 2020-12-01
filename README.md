@@ -35,6 +35,18 @@ Web Scraping with BS4
     textValues = [item.text for item in items]
     print(textValues)
     
+ ## convert values to int
+     from bs4 import BeautifulSoup
+     import requests
+
+     my_page = "Wohnung mieten im Umkreis von 50 km von Mannheim - ImmobilienScout24.html"
+     soup = BeautifulSoup(open(my_page),"lxml")
+     soup = soup.find('div',class_ = "select-input-wrapper")
+     items = soup.select('option[value]')
+     values = [item.get('value') for item in items]
+     x = [int(item) for item in values]
+     print(x)
+    
 <a href="https://github.com/RGGH/BeautifulSoup/edit/MySQL_version/README.md">
   <img src="https://github.com/RGGH/Misc/blob/master/dropdown_127_800w.png" alt="Dropdown Values" style="">
 </a> 
